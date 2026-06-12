@@ -1,4 +1,6 @@
-
+// ==========================================
+// MSAL CONFIG
+// ==========================================
 const msalConfig = {
   auth: {
     clientId: "8958a680-e0dd-44fb-8e03-8dd22ce9ca5c",
@@ -13,34 +15,46 @@ const loginRequest = {
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
 
+// ==========================================
+// LOGIN + TEST GRAPH
+// ==========================================
 async function signIn() {
   try {
+    // Step 1: Login
     const loginResponse = await msalInstance.loginPopup(loginRequest);
-    console.log("Login success:", loginResponse);
-
     const account = loginResponse.account;
+    console.log("Login OK:", account);
 
+    // Step 2: Get token
     const tokenResponse = await msalInstance.acquireTokenSilent({
-      scopes: ["User.Read", "Files.ReadWrite"]
+      scopes: ["User.Read", "Files.ReadWrite"],
       account: account
     });
+    console.log("Token OK:", tokenResponse.accessToken);
 
-    console.log("Access token:", tokenResponse.accessToken);
-
-    // เรียก Graph API
-    const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
+    // Step 3: Test /me
+    const meRes = await fetch("https://graph.microsoft.com/v1.0/me", {
       headers: {
         Authorization: "Bearer " + tokenResponse.accessToken
       }
     });
+    const me = await meRes.json();
+    console.log("ME =", me);
 
-    const profile = await profileRes.json();
-    console.log("Profile:", profile);
+    // Step 4: List files
+    const filesRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/children", {
+      headers: {
+        Authorization: "Bearer " + tokenResponse.accessToken
+      }
+    });
+    const files = await filesRes.json();
+    console.log("FILES =", files);
 
-    alert("Welcome: " + profile.displayName);
+    // Step 5: Alert result
+    alert("Login: " + me.displayName + "\nFiles found: " + (files.value ? files.value.length : 0));
 
   } catch (err) {
-    console.error(err);
-    alert("Login failed");
+    console.error("ERROR:", err);
+    alert("Error: " + err.message);
   }
 }
