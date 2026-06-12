@@ -13,21 +13,40 @@
 <div id="root"></div>
 
 <!-- ===== SharePoint / MSAL config ===== -->
-<script src="https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js"></script>
 <script>
   // ลิงก์ไฟล์ Excel บน SharePoint (เปลี่ยนตรงนี้ถ้าย้ายไฟล์)
   window.SP_FILE_URL = "https://ehth.sharepoint.com/:x:/s/Interpreter/IQA-_bul43PUSYT_GKmEQvDXAdy8naQZYrGiYIl-bP2r0sE?e=yTzASJ";
-  window.msalInstance = new msal.PublicClientApplication({
-    auth: {
-      clientId: "8958a680-e0dd-44fb-8e03-8dd22ce9ca5c",
-      authority: "https://login.microsoftonline.com/11a557d2-03b9-4a8b-8d52-aaef38d6c15b",
-      redirectUri: window.location.origin + window.location.pathname
-    },
-    cache: { cacheLocation: "localStorage" }
-  });
-  // เคลียร์ผลลัพธ์ redirect ถ้ามี (กันค้าง)
-  window.msalInstance.handleRedirectPromise().catch(function(e){ console.warn("MSAL redirect", e); });
+  // สร้าง msalInstance หลัง library โหลดเสร็จ (กันปัญหา msal is not defined)
+  window.initMsal = function(){
+    if(window.msalInstance) return;
+    if(typeof msal === "undefined"){ console.error("MSAL library ยังไม่โหลด"); return; }
+    window.msalInstance = new msal.PublicClientApplication({
+      auth: {
+        clientId: "8958a680-e0dd-44fb-8e03-8dd22ce9ca5c",
+        authority: "https://login.microsoftonline.com/11a557d2-03b9-4a8b-8d52-aaef38d6c15b",
+        redirectUri: window.location.origin + window.location.pathname
+      },
+      cache: { cacheLocation: "localStorage" }
+    });
+    window.msalInstance.handleRedirectPromise().catch(function(e){ console.warn("MSAL redirect", e); });
+  };
+  // โหลด MSAL จาก CDN หลัก ถ้าพังลอง CDN สำรอง
+  window.__loadMsal = function(){
+    var s = document.createElement("script");
+    s.src = "https://alcdn.msauth.net/browser/2.39.0/js/msal-browser.min.js";
+    s.onload = window.initMsal;
+    s.onerror = function(){
+      var s2 = document.createElement("script");
+      s2.src = "https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/dist/msal-browser.min.js";
+      s2.onload = window.initMsal;
+      s2.onerror = function(){ console.error("โหลด MSAL ไม่สำเร็จทั้ง 2 CDN"); };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  };
+  window.__loadMsal();
 </script>
+
 
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
