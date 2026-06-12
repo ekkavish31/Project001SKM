@@ -348,7 +348,12 @@
       return loadBuffer(buf, "QAD_Skill_Map_DB.xlsx", "sharepoint");
     },
     _spToken: async function(){
-      if(!window.msalInstance && window.initMsal) window.initMsal();
+      // รอให้ MSAL v3 initialize() เสร็จก่อน
+      if(!window.msalInstance && window.initMsal){
+        var p = window.initMsal();
+        if(p) { try{ await p; }catch(e){} }
+      }
+      if(window.msalReady){ try{ await window.msalReady; }catch(e){} }
       if(!window.msalInstance) throw new Error("MSAL ยังไม่พร้อม — รอสักครู่แล้วลองใหม่ (ตรวจการเชื่อมต่อ CDN)");
       var scopes = ["User.Read","Files.ReadWrite.All"];
       var account = msalInstance.getAllAccounts()[0];
