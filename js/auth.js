@@ -8,7 +8,7 @@ const msalConfig = {
 };
 
 const loginRequest = {
-  scopes: ["User.Read"]
+  scopes: ["User.Read", "Files.ReadWrite"]
 };
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
@@ -21,7 +21,7 @@ async function signIn() {
     const account = loginResponse.account;
 
     const tokenResponse = await msalInstance.acquireTokenSilent({
-      scopes: ["User.Read"],
+      scopes: ["User.Read", "Files.ReadWrite"]
       account: account
     });
 
